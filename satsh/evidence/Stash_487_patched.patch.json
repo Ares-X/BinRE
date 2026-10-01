@@ -1,27 +1,27 @@
 {
   "patcher": {
     "id": "stash-487-local-patch",
-    "manifest_schema": 2,
-    "script_sha256": "615302778e591fe41c3d72fa7aae459f65edf3cbfa21ba97c2fa792c692412a0",
-    "python": "3.9.6",
-    "macos": "27.0.1",
+    "manifest_schema": 3,
+    "script_sha256": "cf529f6fe8c52ba3bc67275a45a872492c742df8a7cfdb4d1a1208495b3cfadf",
+    "python": "3.14.8",
+    "macos": "26.6.2",
     "codesign_path": "/usr/bin/codesign",
-    "codesign_sha256": "d517c9be608ffd266ec106c685e880cda71abc94001450e36d2476016406dd1e",
-    "created_at_utc": "2026-10-01T13:11:15.448858+00:00"
+    "codesign_sha256": "844d30a12929b59c9f2215e2a308c3e1db572831a478f35906e452a54025603e",
+    "created_at_utc": "2026-10-01T16:48:48.542594+00:00"
   },
   "target": {
     "bundle_id": "ws.stash.app.mac",
     "version": "4.2.1",
     "build": "487"
   },
-  "input_app": "Stash 487.app",
-  "output_app": "Stash_487_patched.app",
+  "input_app": "/Users/Shared/Stash487Lab/Original/Stash 487.app",
+  "output_app": "/Users/Shared/Stash487Lab/CleanRoom/NativeBuild/Stash_487_patched.app",
   "archive": {
-    "path": "Stash_487_patched.zip",
-    "sha256": "8119009b65eb2fc2d06eac375b7517942c6a65e3f0ef3cd9cf81d1ec21f3728e"
+    "path": "/Users/Shared/Stash487Lab/CleanRoom/NativeBuild/Stash_487_patched.zip",
+    "sha256": "f6115335c718de2875757028c9d1a9514cfe5e3079e0985713311566eeff3687"
   },
   "input_main_sha256": "264e77c91a7e2075227d2a398b3bec77aa78093b6a7e5fcbd63b2207cc02ba69",
-  "output_main_sha256": "9bd7b7c46ca6de8451e744ef3aee8148d3077005f7972b68a309fcf8a8dcb1b8",
+  "output_main_sha256": "e4aa985095c9d00e436dcea8cfd2e6f8d3f01f337c48ba042bf3cd73dee27535",
   "architectures": {
     "bundle": [
       "x86_64",
@@ -37,14 +37,14 @@
       {
         "architecture": "x86_64",
         "file_offset": "0x4000",
-        "size": 65695296,
-        "sha256": "718a45548a0b616352a49fd9e44af22c58a061d4802204a36750cf6b0dd738f3"
+        "size": 65713296,
+        "sha256": "2912c84edb88c13bed8e011f4b027dbc9d7cdee3ee4938e1381c956d7d68aae4"
       },
       {
         "architecture": "arm64",
-        "file_offset": "0x3eac000",
-        "size": 60642064,
-        "sha256": "50fd3d8950b63d70e97534215fdf66dd3ca914022781b885ba3e6716ff7d4e04"
+        "file_offset": "0x3eb0000",
+        "size": 60660064,
+        "sha256": "3ad84ed477a0950f44666ece6d3867634c8bb1c4166e3d8c382803f7e749cdcd"
       }
     ]
   },
@@ -59,7 +59,7 @@
   "helper_code_modified": false,
   "helper_pairing": {
     "input_sha256": "2bc4a146cce06f7a3e0229d26cae997cc0cb892c8847b2dde9dec32cd50e66ce",
-    "output_sha256": "a0b9859158b61664ad6b37e6e40967a209338dbc489c26daad23b83f6c736c23",
+    "output_sha256": "7a32e8cf56b47262e67340e5f93d6d2b050d5987e7119aab48c47151dac06370",
     "main_app_requirement": {
       "before": "anchor apple generic and identifier \"ws.stash.app.mac.daemon.helper\" and (certificate leaf[field.1.2.840.113635.100.6.1.9] /* exists */ or certificate 1[field.1.2.840.113635.100.6.2.6] /* exists */ and certificate leaf[field.1.2.840.113635.100.6.1.13] /* exists */ and certificate leaf[subject.OU] = B36787XSBG)",
       "after": "identifier \"ws.stash.app.mac.daemon.helper\""
@@ -76,7 +76,7 @@
       {
         "architecture": "arm64",
         "section": "__TEXT,__info_plist",
-        "file_offset": "0x510df4",
+        "file_offset": "0x514df4",
         "size": 847,
         "before": "anchor apple generic and identifier \"ws.stash.app.mac\" and (certificate leaf[field.1.2.840.113635.100.6.1.9] /* exists */ or certificate 1[field.1.2.840.113635.100.6.2.6] /* exists */ and certificate leaf[field.1.2.840.113635.100.6.1.13] /* exists */ and certificate leaf[subject.OU] = B36787XSBG)",
         "after": "identifier \"ws.stash.app.mac\""
@@ -109,7 +109,7 @@
   "codesign": {
     "Identifier": "ws.stash.app.mac",
     "Format": "app bundle with Mach-O universal (x86_64 arm64)",
-    "CDHash": "c864c7a1bb151624fd2a1242265949b261f64c7c",
+    "CDHash": "1c6284620de7bf6108036c37e51bb0a60d455419",
     "Signature": "adhoc",
     "TeamIdentifier": "not set"
   },
@@ -118,7 +118,7 @@
       "category": "activation",
       "label": "Swift activationState value",
       "arm64_offset": "0x149ab0",
-      "file_offset": "0x3ff5ab0",
+      "file_offset": "0x3ff9ab0",
       "before": "660a40f9",
       "after": "c6038052"
     },
@@ -126,7 +126,7 @@
       "category": "activation",
       "label": "Swift activationState tag",
       "arm64_offset": "0x149ab8",
-      "file_offset": "0x3ff5ab8",
+      "file_offset": "0x3ff9ab8",
       "before": "7ba20539",
       "after": "7fa20539"
     },
@@ -134,7 +134,7 @@
       "category": "activation",
       "label": "Swift licenseType value",
       "arm64_offset": "0x149abc",
-      "file_offset": "0x3ff5abc",
+      "file_offset": "0x3ff9abc",
       "before": "641240f9",
       "after": "44008052"
     },
@@ -142,7 +142,7 @@
       "category": "activation",
       "label": "Swift licenseType tag",
       "arm64_offset": "0x149ac8",
-      "file_offset": "0x3ff5ac8",
+      "file_offset": "0x3ff9ac8",
       "before": "65e20539",
       "after": "7fe20539"
     },
@@ -150,7 +150,7 @@
       "category": "activation",
       "label": "Swift deviceType tag",
       "arm64_offset": "0x149ad4",
-      "file_offset": "0x3ff5ad4",
+      "file_offset": "0x3ff9ad4",
       "before": "29008052",
       "after": "09008052"
     },
@@ -158,7 +158,7 @@
       "category": "activation",
       "label": "Swift activationPlan value/tag",
       "arm64_offset": "0x149adc",
-      "file_offset": "0x3ff5adc",
+      "file_offset": "0x3ff9adc",
       "before": "618243a961ca00f9632e40b963620639",
       "after": "602240f98102805261ca00f97f620639"
     },
@@ -166,7 +166,7 @@
       "category": "activation",
       "label": "Go ActivationInfo.GetActivationState",
       "arm64_offset": "0xd88570",
-      "file_offset": "0x4c34570",
+      "file_offset": "0x4c38570",
       "before": "600000b4001880b9",
       "after": "c0038052c0035fd6"
     },
@@ -174,7 +174,7 @@
       "category": "activation",
       "label": "Go ActivationInfo.GetActivationLicenseType",
       "arm64_offset": "0xd88590",
-      "file_offset": "0x4c34590",
+      "file_offset": "0x4c38590",
       "before": "600000b4001c80b9",
       "after": "40008052c0035fd6"
     },
@@ -182,7 +182,7 @@
       "category": "activation",
       "label": "Go ActivationInfo.GetActivationDeviceType",
       "arm64_offset": "0xd885b0",
-      "file_offset": "0x4c345b0",
+      "file_offset": "0x4c385b0",
       "before": "600000b4002080b9",
       "after": "40008052c0035fd6"
     },
@@ -190,7 +190,7 @@
       "category": "activation",
       "label": "Go ActivationInfo.GetActivationPlan",
       "arm64_offset": "0xd885d0",
-      "file_offset": "0x4c345d0",
+      "file_offset": "0x4c385d0",
       "before": "600000b4002480b9",
       "after": "80028052c0035fd6"
     },
@@ -198,7 +198,7 @@
       "category": "ad-hoc signing compatibility",
       "label": "return nil for the CloudKit container unavailable to an ad-hoc signed build",
       "arm64_offset": "0x7f380",
-      "file_offset": "0x3f2b380",
+      "file_offset": "0x3f2f380",
       "before": "e0276e94",
       "after": "000080d2"
     },
@@ -206,9 +206,33 @@
       "category": "ad-hoc signing compatibility",
       "label": "return nil for the CloudDBManager container unavailable to an ad-hoc signed build",
       "arm64_offset": "0x14aa20",
-      "file_offset": "0x3ff6a20",
+      "file_offset": "0x3ffaa20",
       "before": "38fa6a94",
       "after": "000080d2"
+    },
+    {
+      "category": "ad-hoc helper compatibility",
+      "label": "extend helper version probe 1 from 15 to 30 seconds",
+      "arm64_offset": "0x97f98",
+      "file_offset": "0x3f47f98",
+      "before": "00d0651e",
+      "after": "00d0671e"
+    },
+    {
+      "category": "ad-hoc helper compatibility",
+      "label": "extend helper version probe 2 from 15 to 30 seconds",
+      "arm64_offset": "0x985f8",
+      "file_offset": "0x3f485f8",
+      "before": "00d0651e",
+      "after": "00d0671e"
+    },
+    {
+      "category": "ad-hoc helper compatibility",
+      "label": "extend helper version probe 3 from 15 to 30 seconds",
+      "arm64_offset": "0x98cfc",
+      "file_offset": "0x3f48cfc",
+      "before": "00d0651e",
+      "after": "00d0671e"
     }
   ]
 }

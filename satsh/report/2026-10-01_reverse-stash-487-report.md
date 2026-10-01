@@ -1,6 +1,6 @@
 # Stash 4.2.1 (487) 激活校验评估报告
 
-日期：2026-10-01
+日期：2026-10-02
 
 范围：用户自有 Stash build 487，ARM64 主程序，隔离 Parallels macOS 虚拟机
 
@@ -12,20 +12,21 @@ build 482 的“修改本地激活状态”思路仍可迁移到 build 487，但
 旧脚本中的四个所谓 Go getter 偏移实际上落在 Starscream WebSocket value-witness
 函数中，可能正是旧产物出现代理长期加载问题的原因。
 
-build 487 的正确实现由三部分组成：
+build 487 的当前实现由四部分组成：
 
 1. 10 个 ARM64 激活状态补丁，使 Swift 归一化对象和 Go getter 对同一状态达成一致。
 2. 2 个 ARM64 临时签名兼容补丁，绕过 ad-hoc 包无法创建生产 CloudKit 容器导致的启动崩溃。
-3. Helper 的签名配对修复，仅修改嵌入 plist 和签名，不修改 Helper 代码。
+3. 3 个 Helper 版本探测期限补丁，把真实 XPC 回应等待从 15 秒放宽到 30 秒，不伪造安装结果。
+4. Helper 的签名配对修复，仅修改嵌入 plist 和签名，不修改 Helper 代码。
 
-在 ARM64 虚拟机中，最终代码已通过激活、Helper 安装、订阅下载、配置加载、
-代理组显示、延迟测试、HTTP 代理出站和应用重启持久性验证。它不是全架构或
+在 ARM64 虚拟机中，最终代码已通过激活、Helper 安装与冷启动、订阅下载、配置加载、
+代理组显示、延迟测试、HTTP 代理出站、冷重启和独立产物验证。它不是全架构或
 生产签名等价的“完美破解”：x86_64 未补丁，CloudKit/iCloud 能力因 ad-hoc
 签名受限，更新禁用也只修改 Sparkle 的 bundle 默认值。
 
 ## 范围与授权
 
-完整范围见 [case scope](process/scope.md)。
+完整范围见 [case scope](../scope.md)。
 
 - 授权：用户自有软件，明确授权在专用虚拟机内做补丁、管理员操作、Helper 安装、配置和代理测试。
 - 宿主机：只做静态分析与生成产物；原始 app 保持只读，patched app 不在宿主机启动或安装。
@@ -60,9 +61,9 @@ build 487 的正确实现由三部分组成：
 ### E-004 最终补丁清单
 
 - source_ref: `evidence/Stash_487_patched.patch.json`
-- content_hash: `9e43525a70afbf6c80142a778e5086e5a018263520c7347bc87acf54eba0082b`
+- content_hash: `e58bc8e283a8a662ec4e0e7337379539fd5bb771a407f3aef2db2850f8520e21`
 - repro_command: `jq '{architectures,patches,codesign,helper_pairing}' evidence/Stash_487_patched.patch.json`
-- observation: 12 个 ARM64 指令点，签名后偏移已重算；Helper 代码未修改；CDHash 已记录。
+- observation: schema 3 记录 15 个 ARM64 指令点，签名后偏移已重算；Helper 代码未修改；CDHash 已记录。
 
 ### E-005 代理加载截图
 
@@ -99,6 +100,27 @@ build 487 的正确实现由三部分组成：
 - repro_command: `lipo "Stash 487.app/Contents/MacOS/Stash" -thin arm64 -output Stash-487.arm64 && otool -L Stash-487.arm64`
 - observation: 关键依赖包括 Security、StoreKit、SystemConfiguration、Sparkle、CloudKit、ServiceManagement 和 SwiftUI。
 
+### E-010 独立产物验证器
+
+- source_ref: `verify_stash_487.py`
+- content_hash: `24e68a96b17fc81810788b127d7e1942e42443f28ad3c16b1d7ab68e28516d1e`
+- repro_command: `python3 verify_stash_487.py --app Stash_487_patched.app --manifest Stash_487_patched.patch.json --archive Stash_487_patched.zip --patcher patch_stash_487.py`
+- observation: 虚拟机内和取回宿主的产物均通过 15/15 补丁、脚本来源、Helper 配对、更新默认值、签名、权限和 ZIP 完整性校验。
+
+### E-011 Helper 冷启动时序
+
+- source_ref: VM unified log and launchctl state
+- content_hash: installed helper `7a32e8cf56b47262e67340e5f93d6d2b050d5987e7119aab48c47151dac06370`
+- repro_command: `log show --style compact --start '2026-10-02 00:50:40' --end '2026-10-02 00:50:46' --predicate 'eventMessage CONTAINS[c] "ws.stash.app.mac.daemon.helper" OR process == "ws.stash.app.mac.daemon.helper"'`
+- observation: Stash 于 00:50:42.758 发起 XPC，launchd 于 00:50:42.777 启动 Helper，listener 于 00:50:43.110 激活；30 秒后无安装提示。
+
+### E-012 新版虚拟机最终 UAT
+
+- source_ref: private VM capture plus local network probes, not distributed
+- content_hash: n/a
+- repro_command: `curl --proxy http://127.0.0.1:7890 -o /dev/null -w '%{http_code}' https://www.gstatic.com/generate_204`
+- observation: Parallels Desktop 27.0.2 / macOS 26.6.2 冷重启后无 Setup/激活窗口；仪表盘和代理组正常，监听 `7890/9090`，直连与代理探针均为 HTTP 204。
+
 ## Findings
 
 ### F-001 本地 ActivationInfo 可被常量化绕过
@@ -107,7 +129,7 @@ build 487 的正确实现由三部分组成：
 - severity: high
 - category: bypass
 - status: validated
-- evidence_ids: [E-003, E-004, E-005, E-006]
+- evidence_ids: [E-003, E-004, E-005, E-006, E-010, E-012]
 - location: `0x149ab0..0x149adc`, `0xd88570..0xd885d0`
 - impact: 可在不提供真实 license 凭据的情况下进入已激活 UI 并运行本地核心功能。
 - confidence: high
@@ -133,7 +155,7 @@ build 487 的正确实现由三部分组成：
 - severity: info
 - category: design
 - status: validated
-- evidence_ids: [E-004, E-006, E-007, E-009]
+- evidence_ids: [E-004, E-006, E-007, E-009, E-011, E-012]
 - location: `0x7f380`, `0x14aa20`, Helper embedded plist
 - impact: 若不处理，修改后的测试包会在 CloudKit 初始化或 Helper 安装阶段失败；它不改变 license 决策本身。
 - confidence: high
@@ -163,8 +185,8 @@ build 487 的正确实现由三部分组成：
 - steps:
   1. Swift 归一化逻辑写入 state/license/device/plan - evidence E-003/E-004 - finding F-001。
   2. Go protobuf getter 向其他调用方返回同一组常量 - evidence E-003/E-004 - finding F-001。
-  3. 激活与 Setup UI 不再阻断主面板 - evidence E-006 - finding F-001。
-  4. Core 加载用户配置并提供本地代理 - evidence E-005/E-008 - finding F-001。
+  3. 激活与 Setup UI 不再阻断主面板 - evidence E-006/E-012 - finding F-001。
+  4. Core 加载用户配置并提供本地代理 - evidence E-005/E-008/E-012 - finding F-001。
 - residual_risks: x86_64 未覆盖；生产 CloudKit/iCloud 不可用；服务端能力仍需独立验证。
 
 ```mermaid
@@ -182,7 +204,7 @@ flowchart LR
 
 ## Timeline 摘要
 
-完整时间线见 [case timeline](process/timeline.md)。关键节点为：
+完整时间线见 [case timeline](../timeline.md)。关键节点为：
 
 - 18:15：完成目标函数 Diaphora 差分。
 - 18:44-19:01：早期 ad-hoc 构建暴露两个 CloudKit 启动崩溃点。
@@ -190,6 +212,10 @@ flowchart LR
 - 19:24：代理组、延迟和 HTTP 204 出站通过。
 - 19:25：精确 PID 重启后配置与激活状态保持。
 - 19:29：canonical app、清单和 ZIP 完成构建与完整性验证。
+- 次日 00:48：生成含 30 秒 Helper 探测期限的 schema 3 虚拟机原生构建。
+- 次日 00:50：冷重启后 Helper listener 在约 0.35 秒内建立，未出现重复安装提示。
+- 次日 00:59：新版 Parallels 环境下完成仪表盘、代理组、监听和 HTTP 204 复验。
+- 次日 01:07：取回 VM 原生 ZIP/清单并在宿主再次通过独立验证器。
 
 ## 482 与 487 差分
 
@@ -289,15 +315,17 @@ ad-hoc 权限处理如下：
 - 主程序 `SMPrivilegedExecutables` 改为要求 Helper identifier。
 - Helper 的 x86_64 与 arm64 `__TEXT,__info_plist` 中
   `SMAuthorizedClients` 改为要求主程序 identifier。
+- 主程序中三个独立 Helper 版本探测的 `fmov d0,#15.0` 改为
+  `fmov d0,#30.0`；超时回调仍返回失败，真实 `getVersion` 回应仍会取消计时器。
 - Helper 机器码保持不变。
 - Helper 和主程序分别 ad-hoc 签名并做严格签名验证。
 
 虚拟机实测结果：
 
-- Helper 成功安装到 `/Library/PrivilegedHelperTools`。
-- LaunchDaemon plist 成功安装到 `/Library/LaunchDaemons`。
-- 安装文件 SHA-256 与交付 Helper 一致。
-- VM 重启后服务仍被 launchd 注册；按需空闲状态为 not running，last exit code 为 0。
+- Helper 成功安装到 `/Library/PrivilegedHelperTools`，LaunchDaemon plist 安装到 `/Library/LaunchDaemons`。
+- 安装文件 SHA-256 与交付 Helper 一致：`7a32e8cf56b47262e67340e5f93d6d2b050d5987e7119aab48c47151dac06370`。
+- 冷重启后 Stash 发起 XPC 到 Helper listener 激活耗时约 0.35 秒，30 秒后没有安装提示。
+- `launchctl` 显示服务已运行三次、当前 active，last exit code 为 0。
 
 这项修改只用于临时签名的隔离测试包。正式产品应继续使用 Team ID 和 designated
 requirement，不能采用 identifier-only 信任。
@@ -321,15 +349,19 @@ Sparkle 框架和手动更新实现仍保留，因此准确描述是“禁用 bu
 | 原始应用未被修改 | PASS | 脚本只读原包并输出独立 app |
 | 精确版本/哈希门禁 | PASS | 主程序与 Helper SHA-256 均先验证 |
 | 补丁后深度签名 | PASS | `codesign --verify --deep --strict` |
-| Helper 安装 | PASS | 安装文件哈希匹配，LaunchDaemon 注册 |
-| 激活/Setup 窗口 | PASS | 最终启动和重启均未出现 |
+| 独立验证器 | PASS | VM 与宿主取回产物均通过 15/15 补丁和 ZIP 校验 |
+| 失败关闭负向测试 | PASS | wrong build、任意已有输出、错误后缀、symlink 共 4/4 |
+| Helper 安装与冷启动 | PASS | 安装文件哈希匹配，LaunchDaemon 注册，listener 约 0.35 秒激活 |
+| 激活/Setup 窗口 | PASS | 最终冷重启未出现；30 秒后也无 Helper 提示 |
 | 私有测试订阅下载 | PASS | 应用内下载并落盘 |
 | 配置加载 | PASS | 47,412 条规则，代理组/节点显示 |
 | 延迟测试 | PASS | 多个组返回 64 ms、76 ms、159 ms、252 ms 等 |
 | 直接出站 | PASS | HTTP 204 |
 | Stash 代理出站 | PASS | 经 `127.0.0.1:7890` 返回 HTTP 204 |
-| 应用重启持久性 | PASS | PID 424 -> 1267，配置与激活状态保持 |
-| 新崩溃报告 | PASS | 最终版本运行后无新 `.ips` |
+| 应用重启持久性 | PASS | 进程重启与 VM 冷重启后配置与激活状态保持 |
+| 仪表盘输入路径 | PASS | guest-local 事件可打开；宿主转发不稳定与补丁无关 |
+| 新系统崩溃报告 | PASS | 最终版本运行后无新 `.ips` |
+| Core continuation 日志 | ACCEPTED RISK | CloudDB 警告仍存在，代理功能未受影响，CloudKit 不在通过范围 |
 | x86_64 激活 | NOT EXERCISED | x86_64 slice 未补丁 |
 | CloudKit/iCloud 同步 | NOT EXERCISED | ad-hoc 包无生产 entitlement |
 | 自动更新周期 | NOT EXERCISED | 仅验证 plist 值与包内容 |
@@ -344,31 +376,30 @@ Sparkle 框架和手动更新实现仍保留，因此准确描述是“禁用 bu
 
 ## 最终产物一致性
 
-虚拟机实测副本与 canonical 输出以下文件哈希完全一致：
+最终交付来自虚拟机原生构建，并在取回宿主后再次验证。关键哈希为：
 
 ```text
 Info.plist
 28b2555d8fc6d8c748b81c912ff7fe081d4a72e4c4da7cf393f62b125be46c42
 
 Main executable
-9bd7b7c46ca6de8451e744ef3aee8148d3077005f7972b68a309fcf8a8dcb1b8
+e4aa985095c9d00e436dcea8cfd2e6f8d3f01f337c48ba042bf3cd73dee27535
 
 Privileged helper
-a0b9859158b61664ad6b37e6e40967a209338dbc489c26daad23b83f6c736c23
+7a32e8cf56b47262e67340e5f93d6d2b050d5987e7119aab48c47151dac06370
 
 CodeResources
-cb5689738a7f627d6972079a5a1fab2614c34fe2fc71830bdbc7c8d95d2aeea1
+fbe1d91ac0e59850c45e54eae541c9ffdf168166ea11b24a834fe67d83683fb0
+
+Manifest
+e58bc8e283a8a662ec4e0e7337379539fd5bb771a407f3aef2db2850f8520e21
+
+ZIP
+f6115335c718de2875757028c9d1a9514cfe5e3079e0985713311566eeff3687
+
+CDHash
+1c6284620de7bf6108036c37e51bb0a60d455419
 ```
-
-当前 ZIP SHA-256：
-
-```text
-71d67486e6ab7a6a78d72a486891ffd28a51856b20d337f24c0b697447bd9bf9
-```
-
-该值对应虚拟机验证时的 canonical ZIP。仓库化脚本只调整了默认输入路径，
-重新构建的 App 主程序、Helper 与 CDHash 保持一致；ZIP 因构建时间变化为
-`8119009b65eb2fc2d06eac375b7517942c6a65e3f0ef3cd9cf81d1ec21f3728e`。
 
 ## 加固建议
 

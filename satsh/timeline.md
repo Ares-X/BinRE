@@ -39,3 +39,23 @@
 
 - action: Rebuilt the canonical app transactionally and completed code-signature and ZIP integrity checks.
 - evidence_ids: [E-004]
+
+## 2026-10-02T00:48:00+08:00 | primary | helper-compatibility
+
+- action: Rebuilt the VM-native canonical artifact with three 15-to-30-second Helper probe deadline changes and manifest schema 3.
+- evidence_ids: [E-004, E-011]
+
+## 2026-10-02T00:50:00+08:00 | primary | cold-reboot
+
+- action: Cold-rebooted Parallels Desktop 27.0.2, observed the real Helper listener within 0.35 seconds, and confirmed no Helper prompt after the extended deadline.
+- evidence_ids: [E-011]
+
+## 2026-10-02T00:59:00+08:00 | primary | final-uat
+
+- action: Opened the dashboard using a guest-local input event, confirmed proxy group loading and latency, and repeated direct/proxied HTTP 204 probes.
+- evidence_ids: [E-012]
+
+## 2026-10-02T01:07:00+08:00 | primary | final-delivery
+
+- action: Retrieved the VM-native ZIP and manifest, then reran the independent verifier against the extracted host copy.
+- evidence_ids: [E-004, E-010]

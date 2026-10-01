@@ -21,7 +21,7 @@ APP_ID = "ws.stash.app.mac"
 APP_VERSION = "4.2.1"
 APP_BUILD = "487"
 PATCHER_ID = "stash-487-local-patch"
-MANIFEST_SCHEMA = 2
+MANIFEST_SCHEMA = 3
 MAIN_BINARY_SHA256 = "264e77c91a7e2075227d2a398b3bec77aa78093b6a7e5fcbd63b2207cc02ba69"
 HELPER_ID = "ws.stash.app.mac.daemon.helper"
 HELPER_SHA256 = "2bc4a146cce06f7a3e0229d26cae997cc0cb892c8847b2dde9dec32cd50e66ce"
@@ -109,6 +109,31 @@ SIGNING_COMPATIBILITY_PATCHES = (
         0x14AA20,
         bytes.fromhex("38fa6a94"),  # bl objc_msgSend$containerWithIdentifier:
         bytes.fromhex("000080d2"),  # mov x0,#0
+    ),
+)
+
+# An ad-hoc signed privileged helper takes longer to pass the first AMFI/TCC
+# launch after a cold boot. The original 15 second probes can therefore time
+# out just before the real XPC getVersion reply arrives. These three copies of
+# the same probe keep the helper decision intact and only widen its deadline.
+HELPER_COLD_START_COMPATIBILITY_PATCHES = (
+    (
+        "extend helper version probe 1 from 15 to 30 seconds",
+        0x97F98,
+        bytes.fromhex("00d0651e"),  # fmov d0,#15.0
+        bytes.fromhex("00d0671e"),  # fmov d0,#30.0
+    ),
+    (
+        "extend helper version probe 2 from 15 to 30 seconds",
+        0x985F8,
+        bytes.fromhex("00d0651e"),
+        bytes.fromhex("00d0671e"),
+    ),
+    (
+        "extend helper version probe 3 from 15 to 30 seconds",
+        0x98CFC,
+        bytes.fromhex("00d0651e"),
+        bytes.fromhex("00d0671e"),
     ),
 )
 
@@ -498,6 +523,25 @@ def patch_main_binary(binary: Path) -> list[dict[str, object]]:
         records.append(
             {
                 "category": "ad-hoc signing compatibility",
+                "label": label,
+                "arm64_offset": f"0x{offset:x}",
+                "file_offset": f"0x{slice_offset + offset:x}",
+                "before": expected.hex(),
+                "after": replacement.hex(),
+            }
+        )
+
+    for label, offset, expected, replacement in HELPER_COLD_START_COMPATIBILITY_PATCHES:
+        current = bytes(arm64[offset : offset + len(expected)])
+        if current != expected:
+            raise SystemExit(
+                f"[!] {label}: preimage mismatch at ARM64+0x{offset:x}: "
+                f"got={current.hex()} want={expected.hex()}"
+            )
+        arm64[offset : offset + len(replacement)] = replacement
+        records.append(
+            {
+                "category": "ad-hoc helper compatibility",
                 "label": label,
                 "arm64_offset": f"0x{offset:x}",
                 "file_offset": f"0x{slice_offset + offset:x}",
